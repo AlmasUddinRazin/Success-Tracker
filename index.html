@@ -129,14 +129,17 @@
 
             <!-- Required Pace Card -->
             <div class="glass-light dark:glass-dark p-6 rounded-2xl border-l-4 border-indigo-600 shadow-md transition-colors duration-300">
-                <h3 class="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Required Daily Pace (20 Days Left to Sept 30)</h3>
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Fixed Baseline Daily Pace (Target: Sept 30)</h3>
+                    <span id="pace-status-badge" class="text-xs bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-2.5 py-0.5 rounded-full font-semibold">On Track</span>
+                </div>
                 <div class="grid grid-cols-2 gap-4 mt-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Daily Money Target</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Baseline Daily Money Target</p>
                         <p id="pace-money" class="font-mono text-lg md:text-xl font-bold">1,637.19 BDT / day</p>
                     </div>
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Daily Clip Target</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Baseline Daily Clip Target</p>
                         <p id="pace-clips" class="font-mono text-lg md:text-xl font-bold text-emerald-600 dark:text-emerald-400">6,549 clips / day</p>
                     </div>
                 </div>
@@ -291,7 +294,11 @@
         // --- Core Application Data ---
         const RATE = 0.25;
         const TARGET_BDT = 40000;
-        const DAYS_LEFT = 20;
+        
+        // FIXED BASELINE SCHEDULE PARAMETERS (Static from project start to end so finishing early doesn't drop target requirements)
+        const TOTAL_PROJECT_DAYS = 21; // Total duration baseline
+        const FIXED_DAILY_MONEY_TARGET = TARGET_BDT / TOTAL_PROJECT_DAYS; // ~1,904.76 BDT / day fixed baseline
+        const FIXED_DAILY_CLIP_TARGET = FIXED_DAILY_MONEY_TARGET / RATE;  // ~7,619 clips / day fixed baseline
 
         let appData = {
             date: "2026-09-10",
@@ -358,8 +365,6 @@
             const remainingClips = Math.max(0, totalTargetClips - mergedClips);
             
             const progressPercent = Math.min(100, (mergedValue / TARGET_BDT) * 100).toFixed(1);
-            const dailyMoney = remainingMoney / DAYS_LEFT;
-            const dailyClips = remainingClips / DAYS_LEFT;
 
             // DOM Updates
             document.getElementById('display-date').innerText = appData.date || "2026-09-10";
@@ -383,8 +388,19 @@
             document.getElementById('progress-bar').style.width = progressPercent + '%';
             document.getElementById('display-earned').innerText = mergedValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' BDT';
 
-            document.getElementById('pace-money').innerText = dailyMoney.toLocaleString(undefined, {maximumFractionDigits: 2}) + ' BDT / day';
-            document.getElementById('pace-clips').innerText = Math.ceil(dailyClips).toLocaleString() + ' clips / day';
+            // Fixed Pace Display (Locked to baseline so finishing work early doesn't manipulate the metric negatively)
+            document.getElementById('pace-money').innerText = FIXED_DAILY_MONEY_TARGET.toLocaleString(undefined, {maximumFractionDigits: 2}) + ' BDT / day';
+            document.getElementById('pace-clips').innerText = Math.ceil(FIXED_DAILY_CLIP_TARGET).toLocaleString() + ' clips / day';
+
+            // Dynamic badge feedback if ahead or completed
+            const paceBadge = document.getElementById('pace-status-badge');
+            if (mergedValue >= TARGET_BDT) {
+                paceBadge.innerText = "Goal Completed!";
+                paceBadge.className = "text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-full font-semibold";
+            } else {
+                paceBadge.innerText = "Baseline Target";
+                paceBadge.className = "text-xs bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-2.5 py-0.5 rounded-full font-semibold";
+            }
         }
 
         function toggleEditModal() {
